@@ -14,18 +14,29 @@ import (
 // more times. After each requeue we assert the resourceFingerprint is unchanged
 // (generation + resourceVersion must not move). This catches lesson #437
 // regressions: a reconciler that always re-writes owned objects will fail here.
-// idempotencyImageContractSkip documents why the Ready-gated idempotency corpus
-// is currently skipped. Once the conformance suite actually runs (#64), every
-// HermesInstance fails to reach Ready: the operator's `init-uv` init container
-// (internal/resources/runtime_init.go) copies pyproject.toml/uv.lock from
-// /opt/venv-template/, but the published ghcr.io/paperclipinc/hermes-agent image
-// builds its venv at /opt/venv and ships nothing at /opt/venv-template/. The init
-// container exits 1, the pod never starts the hermes container, and the
-// StatefulSet never reaches readyReplicas==replicas. That is an operator/agent
-// image contract bug unrelated to reconciler idempotency, tracked in #68. These
-// entries are skipped (visibly, with this reason) rather than left to hang until
-// timeout and fail. Remove the skips once #68 is fixed.
-const idempotencyImageContractSkip = "blocked by #68: operator init-uv copies from /opt/venv-template which is absent in the published hermes-agent image, so no HermesInstance reaches Ready; unskip once #68 is fixed"
+// The Ready-gated corpus stays skipped, but the reason has moved on from #68.
+//
+// #68 (the init-uv contract: lockfiles missing at /opt/venv-template/) is fixed
+// — #85 ships the lockfiles, #88 ships the uv binary, and v2026.5.29.2 was
+// republished. With that, init-uv now succeeds (verified) and the pod reaches
+// its main `hermes` container. But the instance still cannot become Ready in CI:
+//
+//  1. The published hermes-agent exits immediately unless an LLM provider +
+//     credentials are configured ("Failed to initialize agent: No LLM provider
+//     configured"). The CI fixtures carry none, so the container exits 0 and
+//     CrashLoopBackOffs.
+//  2. The agent's long-lived form is `hermes gateway run` (a chat-platform
+//     daemon), not the one-shot `hermes-agent run` the image entrypoint invokes
+//     — and it binds no :8443 server, so the operator's TCPSocket :8443
+//     readiness probe cannot pass as-is.
+//  3. The published image is missing modules (websockets, hermes_cli.dashboard_auth).
+//
+// Reaching Ready in CI therefore needs design-level decisions (inject LLM
+// credentials, rework the entrypoint/readiness/port model, fix image deps), not
+// just the #68 image fix. Tracked under #64. waitForInstanceReady now dumps pod
+// diagnostics on timeout so the blocker is visible in the CI log. Unskip these
+// once an instance can actually reach Ready in CI.
+const idempotencyReadyBlockedSkip = "cannot reach Ready in CI: hermes-agent needs an LLM provider+credentials to start and the operator's :8443 gateway-readiness model does not match the chat-gateway agent (see #64); the #68 init-uv contract itself is fixed (#85, #88)"
 
 var idempotencyCorpus = []struct {
 	label   string
@@ -36,27 +47,26 @@ var idempotencyCorpus = []struct {
 	// blocked by an out-of-scope operator bug).
 	skip string
 }{
-	{label: "minimal", fixture: "minimal.yaml", skip: idempotencyImageContractSkip},
-	{label: "maximal", fixture: "maximal.yaml", skip: idempotencyImageContractSkip},
-	{label: "gateways-all", fixture: "gateways-all.yaml", skip: idempotencyImageContractSkip},
-	{label: "selfconfig-enabled", fixture: "selfconfig-enabled.yaml", skip: idempotencyImageContractSkip},
-	{label: "profilestore-enabled", fixture: "profilestore-enabled.yaml", skip: idempotencyImageContractSkip},
-	{label: "autoupdate-enabled", fixture: "autoupdate-enabled.yaml", skip: idempotencyImageContractSkip},
-	{label: "backup-enabled", fixture: "backup-enabled.yaml", skip: idempotencyImageContractSkip},
-	{label: "networking-ingress", fixture: "networking-ingress.yaml", skip: idempotencyImageContractSkip},
-	{label: "observability-full", fixture: "observability-full.yaml", skip: idempotencyImageContractSkip},
+	{label: "minimal", fixture: "minimal.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "maximal", fixture: "maximal.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "gateways-all", fixture: "gateways-all.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "selfconfig-enabled", fixture: "selfconfig-enabled.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "profilestore-enabled", fixture: "profilestore-enabled.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "autoupdate-enabled", fixture: "autoupdate-enabled.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "backup-enabled", fixture: "backup-enabled.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "networking-ingress", fixture: "networking-ingress.yaml", skip: idempotencyReadyBlockedSkip},
+	{label: "observability-full", fixture: "observability-full.yaml", skip: idempotencyReadyBlockedSkip},
 	{
 		label:   "ollama-webterminal-tailscale",
 		fixture: "ollama-webterminal-tailscale.yaml",
-		// Blocked twice over: by #68 (init-uv contract, like every entry) and,
-		// even after #68, by the operator-managed tailscale sidecar. That sidecar
-		// runs `containerboot`, which exits when TS_AUTHKEY cannot join a tailnet.
+		// Blocked by the operator-managed tailscale sidecar: it runs
+		// `containerboot`, which exits when TS_AUTHKEY cannot join a tailnet.
 		// The fixture ships a dummy auth key (no real ephemeral key is available
 		// in CI), so the sidecar container never becomes Ready, the pod stays
 		// NotReady, and the HermesInstance never reaches Ready=True. Unskip only
-		// once #68 is fixed AND a real ephemeral tailnet auth key is injected via
-		// secret in CI. See #64.
-		skip: "requires a live tailscale ephemeral auth key to reach Ready (dummy key cannot join a tailnet), and is also blocked by #68; see #64",
+		// once a real ephemeral tailnet auth key is injected via secret in CI.
+		// See #64. (#68, which blocked every other entry, is now fixed.)
+		skip: "requires a live tailscale ephemeral auth key to reach Ready (dummy key cannot join a tailnet); see #64",
 	},
 }
 
