@@ -1,6 +1,10 @@
 package resources
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -13,11 +17,23 @@ func GatewayTokenSecretName(inst *hermesv1.HermesInstance) string {
 	return inst.Name + "-gateway-tokens"
 }
 
-// BuildGatewayTokenSecret returns a placeholder Secret owned by the instance.
-// Plan 2 emits an empty Secret with the "hermes.agent/placeholder: true"
-// annotation; Plan 3 replaces the body with gateway-token bytes resolved from
-// spec.gateways.*.tokenSecretRef. Until Plan 3 lands, the agent reads its tokens
-// from user-provided EnvFrom secrets directly.
+// GenerateAPIServerKey returns a cryptographically random key for the agent's
+// OpenAI-compatible API server. The reconciler generates this once on Secret
+// creation and preserves it across reconciles (see reconcileSecret), so it never
+// thrashes and is never derivable from public object metadata.
+func GenerateAPIServerKey() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", fmt.Errorf("generate api server key: %w", err)
+	}
+	return hex.EncodeToString(b), nil
+}
+
+// BuildGatewayTokenSecret returns the operator-owned per-instance Secret. It is a
+// pure builder: the value of the API server key (APIServerKeySecretKey) is filled
+// in and preserved by the reconciler, not here, so the builder stays
+// deterministic. Plan 3 will additionally populate gateway-token bytes resolved
+// from spec.gateways.*.tokenSecretRef.
 func BuildGatewayTokenSecret(inst *hermesv1.HermesInstance) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
