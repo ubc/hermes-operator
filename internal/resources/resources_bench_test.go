@@ -37,7 +37,7 @@ func fullBenchInstance() *hermesv1.HermesInstance {
 		},
 		Spec: hermesv1.HermesInstanceSpec{
 			Image: hermesv1.ImageSpec{
-				Repository: "ghcr.io/paperclipinc/hermes-agent",
+				Repository: "ghcr.io/ubc/hermes-agent",
 				Tag:        "v1.0.0",
 				PullPolicy: "IfNotPresent",
 			},

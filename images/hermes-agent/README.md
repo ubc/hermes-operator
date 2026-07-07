@@ -1,6 +1,6 @@
 # hermes-agent image build context
 
-The operator owns `ghcr.io/paperclipinc/hermes-agent`. It is the **upstream
+The operator owns `ghcr.io/ubc/hermes-agent`. It is the **upstream
 `nousresearch/hermes-agent` image** (an s6-overlay runtime that bundles the
 gateway, dashboard, OpenAI-compatible API server, a Playwright/Chromium browser,
 node, and every Python dependency) with operator metadata layered on top.
@@ -9,7 +9,7 @@ We intentionally do **not** rebuild the Python environment ourselves. The agent
 is designed to run under s6 supervision (`/init` as PID 1, per-profile gateways,
 profile reconcile on boot, browser under `/opt/hermes/.playwright`); reproducing
 that from a bare `uv sync` is both fragile and incomplete (see #89). The operator
-orchestrates the upstream image declaratively — it runs `hermes gateway run` with
+orchestrates the upstream image declaratively: it runs `hermes gateway run` with
 the API server enabled and probes `/health` on the gateway port (see
 `internal/resources/statefulset.go` and `docs/runtime.md`).
 
@@ -22,6 +22,16 @@ the API server enabled and probes `/health` on the gateway port (see
 
 ## Bumping the upstream version
 
+This is automated. `.github/workflows/agent-image-update.yaml` runs daily,
+compares the latest upstream `NousResearch/hermes-agent` release against the
+`HERMES_VERSION` pinned in `Dockerfile`, and on a new release opens (and
+auto-merges, when repo settings allow) a PR that bumps both the
+`FROM ...@sha256:<digest>` line and the `HERMES_VERSION` build arg. Once the
+bump lands on `main`, `.github/workflows/agent-image.yaml` builds, signs
+(Cosign keyless), SBOM-attests, and pushes the new image.
+
+To bump by hand instead:
+
 1. Resolve the new multi-arch manifest digest for the desired upstream release:
 
    ```bash
@@ -32,5 +42,5 @@ the API server enabled and probes `/health` on the gateway port (see
    arg (the value surfaced as the `hermes.agent/version` label, which the
    autoupdate controller compares against the registry tag) in `Dockerfile`.
 
-3. The image is built, signed (Cosign keyless), SBOM-attested, and pushed by
-   `.github/workflows/agent-image.yaml`.
+3. Merge to `main`; the push trigger on `agent-image.yaml` publishes the image.
+   Tag pushes (`agent/vX.Y.Z`) and manual `workflow_dispatch` also work.

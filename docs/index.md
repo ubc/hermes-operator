@@ -2,7 +2,7 @@
 
 A Kubernetes operator for managing Hermes AI agent instances with production-grade security, observability, and lifecycle management.
 
-This site is the rendered documentation for the operator. The source of truth for every page lives under `docs/` in the [paperclipinc/hermes-operator](https://github.com/paperclipinc/hermes-operator) repository.
+This site is the rendered documentation for the operator. The source of truth for every page lives under `docs/` in the [ubc/hermes-operator](https://github.com/ubc/hermes-operator) repository.
 
 ## Getting started
 

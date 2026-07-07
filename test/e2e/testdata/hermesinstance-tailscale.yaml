@@ -14,7 +14,7 @@ metadata:
   namespace: default
 spec:
   image:
-    repository: ghcr.io/paperclipinc/hermes-agent
+    repository: ghcr.io/ubc/hermes-agent
     tag: "v0.13.0"
     pullPolicy: IfNotPresent
   storage:
