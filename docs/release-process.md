@@ -44,11 +44,7 @@ already-published releases).
    - Release is flipped from draft → published (via the PAT, so the
      `release.published` event fires)
    - Helm chart is packaged and pushed to `oci://ghcr.io/ubc/charts`
-6. **operatorhub-submit.yaml** fires on the published-release event:
-   - Forks `k8s-operatorhub/community-operators`, creates a branch with the
-     new bundle, opens a PR
-   - Same for `redhat-openshift-ecosystem/community-operators-prod`
-7. **Conformance suite** runs on the tag (`conformance.yaml`'s tag trigger).
+6. **Conformance suite** runs on the tag (`conformance.yaml`'s tag trigger).
    The release is considered shippable only after this passes.
 
 ## Cutting v1.0.0 from v0.1.0
@@ -64,13 +60,6 @@ release-please cut a *major* version (`v1.0.0`):
 After v1.0.0, regular `feat:` bumps minor, regular `fix:` bumps patch.
 
 ## Manual fallbacks
-
-If the bundle PR didn't open (network blip, fork name collision), trigger
-manually:
-
-```bash
-gh workflow run "OperatorHub Submission" -f tag=vX.Y.Z
-```
 
 If a release was tagged but the release workflow didn't run (very rare:
 usually because the PAT expired), retag:
@@ -110,7 +99,6 @@ See `docs/security/signing.md` for the full verification ritual.
 - SBOM:
   `https://github.com/ubc/hermes-operator/releases/download/vX.Y.Z/sbom.spdx.json`
 - Cosign signature + SBOM attestation against every image digest
-- OperatorHub PRs (auto-opened): community-operators + community-operators-prod
 
 ## What does NOT ship
 
@@ -118,3 +106,6 @@ See `docs/security/signing.md` for the full verification ritual.
 - Pre-built operator binaries outside the Docker image (operator-only use is
   rare; we don't optimise for it)
 - Krew plugin (post-v1; see spec §12)
+- OperatorHub / community-operators submission: deliberately not published.
+  The OLM bundle is still built and validated in CI, but nothing submits it
+  anywhere.
