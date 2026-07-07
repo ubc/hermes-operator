@@ -28,7 +28,10 @@ compares the latest upstream `NousResearch/hermes-agent` release against the
 auto-merges, when repo settings allow) a PR that bumps both the
 `FROM ...@sha256:<digest>` line and the `HERMES_VERSION` build arg. Once the
 bump lands on `main`, `.github/workflows/agent-image.yaml` builds, signs
-(Cosign keyless), SBOM-attests, and pushes the new image.
+(Cosign keyless), and pushes the new image. The SPDX SBOM ships two ways:
+attached in-registry by BuildKit (`sbom: true`) and uploaded as a workflow
+run artifact. There is no rekor-logged SBOM attestation; the document is
+multiple megabytes and exceeds the public Rekor entry size cap.
 
 To bump by hand instead:
 
