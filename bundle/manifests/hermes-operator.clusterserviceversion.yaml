@@ -206,7 +206,7 @@ spec:
 
     - Kubernetes 1.28+
   maturity: alpha
-  version: 0.1.18
+  version: 0.1.19
   minKubeVersion: 1.28.0
   keywords:
     - ai
@@ -235,8 +235,7 @@ spec:
     - name: GitHub Repository
       url: https://github.com/ubc/hermes-operator
     - name: API Reference
-      url: >-
-        https://github.com/ubc/hermes-operator/blob/main/docs/api-reference.md
+      url: https://github.com/ubc/hermes-operator/blob/main/docs/api-reference.md
     - name: Changelog
       url: https://github.com/ubc/hermes-operator/blob/main/CHANGELOG.md
   installModes:
