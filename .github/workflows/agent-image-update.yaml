@@ -1,0 +1,157 @@
+# .github/workflows/agent-image-update.yaml
+#
+# Daily upstream release watcher for NousResearch/hermes-agent. When upstream
+# publishes a new release, this workflow:
+#   1. Resolves the multi-arch manifest digest for the new release tag on
+#      Docker Hub (docker.io/nousresearch/hermes-agent:<tag>).
+#   2. Bumps ARG HERMES_VERSION and the FROM digest in
+#      images/hermes-agent/Dockerfile.
+#   3. Opens a bump PR using the release bot App token and enables
+#      auto-merge (squash). If auto-merge is not allowed by repo settings it
+#      attempts a direct merge; failing that, the PR is left open for review.
+#
+# Once the bump lands on main, the agent-image workflow's push trigger
+# (paths: images/hermes-agent/**) builds, signs, and publishes
+# ghcr.io/ubc/hermes-agent:<tag> automatically.
+#
+# The App token matters: pushes and merges performed with the default
+# GITHUB_TOKEN do not trigger downstream workflows, so the publish step would
+# never run.
+name: agent-image-update
+
+on:
+  schedule:
+    # Daily. Odd minute to avoid the top-of-hour cron thundering herd.
+    - cron: '23 9 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-image-update
+  cancel-in-progress: false
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-22.04
+    steps:
+      # persist-credentials: false so the push below authenticates with the
+      # App token via the remote URL, not the default GITHUB_TOKEN header
+      # that actions/checkout writes into git config.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Compare upstream release with pinned version
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          latest="$(gh api repos/NousResearch/hermes-agent/releases/latest --jq .tag_name)"
+          case "$latest" in
+            v[0-9]*) ;;
+            *) echo "Unexpected upstream release tag: '${latest}'" >&2; exit 1 ;;
+          esac
+          current="$(sed -n 's/^ARG HERMES_VERSION=//p' images/hermes-agent/Dockerfile)"
+          echo "latest=${latest}" >> "$GITHUB_OUTPUT"
+          echo "current=${current}" >> "$GITHUB_OUTPUT"
+
+          if [ "$latest" = "$current" ]; then
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            echo "Pinned version ${current} is current; nothing to do."
+            exit 0
+          fi
+
+          # Idempotency across daily runs: skip if the bump PR already exists.
+          open_pr="$(gh pr list --repo "$GITHUB_REPOSITORY" \
+            --head "agent-image-update-${latest}" --state open \
+            --json number --jq '.[].number')"
+          if [ -n "$open_pr" ]; then
+            echo "update=false" >> "$GITHUB_OUTPUT"
+            echo "Bump PR #${open_pr} for ${latest} is already open; nothing to do."
+            exit 0
+          fi
+
+          echo "update=true" >> "$GITHUB_OUTPUT"
+          echo "Upstream ${latest} is newer than pinned ${current}."
+
+      - name: Resolve upstream image digest
+        if: steps.ver.outputs.update == 'true'
+        id: digest
+        run: |
+          set -eu
+          tag="${{ steps.ver.outputs.latest }}"
+          digest="$(docker buildx imagetools inspect \
+            "docker.io/nousresearch/hermes-agent:${tag}" \
+            --format '{{.Manifest.Digest}}')"
+          if ! echo "$digest" | grep -Eq '^sha256:[0-9a-f]{64}$'; then
+            echo "Resolved digest '${digest}' is not a valid sha256 digest" >&2
+            exit 1
+          fi
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          echo "docker.io/nousresearch/hermes-agent:${tag} is ${digest}"
+
+      - name: Bump Dockerfile pin
+        if: steps.ver.outputs.update == 'true'
+        run: |
+          set -eu
+          latest="${{ steps.ver.outputs.latest }}"
+          digest="${{ steps.digest.outputs.digest }}"
+          sed -i -E "s|^ARG HERMES_VERSION=.*$|ARG HERMES_VERSION=${latest}|" \
+            images/hermes-agent/Dockerfile
+          sed -i -E "s|^FROM nousresearch/hermes-agent@sha256:[0-9a-f]{64}$|FROM nousresearch/hermes-agent@${digest}|" \
+            images/hermes-agent/Dockerfile
+          if git diff --quiet -- images/hermes-agent/Dockerfile; then
+            echo "sed produced no changes; Dockerfile layout may have drifted" >&2
+            exit 1
+          fi
+          git diff -- images/hermes-agent/Dockerfile
+
+      # Mint a short-lived token (~1h) from the release bot App.
+      # Avoids long-lived PATs that the ubc org policy blocks.
+      - uses: actions/create-github-app-token@v1
+        if: steps.ver.outputs.update == 'true'
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Open bump PR and enable auto-merge
+        if: steps.ver.outputs.update == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -eu
+          latest="${{ steps.ver.outputs.latest }}"
+          current="${{ steps.ver.outputs.current }}"
+          br="agent-image-update-${latest}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          git checkout -b "$br"
+          git add images/hermes-agent/Dockerfile
+          git commit -m "build(agent-image): bump hermes-agent to ${latest}"
+          git push -f origin "$br"
+
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --head "$br" \
+            --base main \
+            --title "build(agent-image): bump hermes-agent to ${latest}" \
+            --body "$(printf 'Automated daily upstream check found NousResearch/hermes-agent release %s (previous pin: %s).\n\nMerging this PR triggers the agent-image workflow, which builds, signs, and publishes ghcr.io/ubc/hermes-agent:%s.\n\nUpstream release notes: https://github.com/NousResearch/hermes-agent/releases/tag/%s' "$latest" "$current" "$latest" "$latest")"
+
+          # Prefer auto-merge (waits for required checks). Fall back to a
+          # direct merge when auto-merge is disabled in repo settings. If
+          # neither is permitted, leave the PR open for a human.
+          if gh pr merge --repo "$GITHUB_REPOSITORY" "$br" --squash --auto; then
+            echo "Auto-merge enabled; publish will follow once checks pass."
+          elif gh pr merge --repo "$GITHUB_REPOSITORY" "$br" --squash; then
+            echo "Merged directly; publish triggers on the push to main."
+          else
+            echo "Could not merge automatically; PR left open for review." >&2
+          fi

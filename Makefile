@@ -153,7 +153,7 @@ docker-buildx: ## Build and push docker image for the manager for cross-platform
 
 # -------- hermes-agent image (Plan 3) --------
 
-AGENT_IMAGE         ?= ghcr.io/paperclipinc/hermes-agent
+AGENT_IMAGE         ?= ghcr.io/ubc/hermes-agent
 HERMES_VERSION      ?= v2026.5.29.2
 AGENT_IMAGE_PLATFORMS ?= linux/amd64,linux/arm64
 
@@ -175,16 +175,6 @@ agent-image-buildx:
 		-t $(AGENT_IMAGE):$(HERMES_VERSION) \
 		images/hermes-agent
 
-# Refresh images/hermes-agent/uv.lock for the requested HERMES_VERSION.
-# Rewrites the git ref in pyproject.toml, then runs native uv (uses the host
-# git + python to resolve the git+https dependency). Requires network access.
-.PHONY: agent-image-relock
-agent-image-relock: ## Relock images/hermes-agent/uv.lock for HERMES_VERSION. Requires local uv + git (resolves the git+https hermes-agent dep). CI alternative: run the agent-image-relock workflow (pins uv 0.11.7).
-	sed -i.bak -E 's|(hermes-agent @ git\+https://github.com/NousResearch/hermes-agent@)[^"]+|\1$(HERMES_VERSION)|' images/hermes-agent/pyproject.toml
-	rm -f images/hermes-agent/pyproject.toml.bak
-	cd images/hermes-agent && UV_FROZEN=false uv lock
-	@echo "Updated images/hermes-agent/pyproject.toml and uv.lock for hermes-agent@$(HERMES_VERSION)"
-
 # Smoke-test a locally built image: --help should exit 0.
 .PHONY: agent-image-smoke
 agent-image-smoke:
@@ -200,7 +190,7 @@ build-installer: manifests generate kustomize ## Generate a consolidated YAML wi
 .PHONY: installer
 installer: manifests generate kustomize ## Emit dist/install.yaml for plain kubectl apply.
 	mkdir -p dist
-	cd config/manager && $(KUSTOMIZE) edit set image controller=ghcr.io/paperclipinc/hermes-operator:$${VERSION:-latest}
+	cd config/manager && $(KUSTOMIZE) edit set image controller=ghcr.io/ubc/hermes-operator:$${VERSION:-latest}
 	$(KUSTOMIZE) build config/default > dist/install.yaml
 	@echo "Wrote dist/install.yaml ($$(wc -l < dist/install.yaml) lines)"
 
@@ -389,8 +379,8 @@ sync-bundle-rbac-check: ## Verify the bundle CSV RBAC is in sync (CI use).
 
 ##@ Bundle
 
-BUNDLE_IMG ?= ghcr.io/paperclipinc/hermes-operator-bundle:$(shell git describe --tags --always)
-CATALOG_IMG ?= ghcr.io/paperclipinc/hermes-operator-catalog:$(shell git describe --tags --always)
+BUNDLE_IMG ?= ghcr.io/ubc/hermes-operator-bundle:$(shell git describe --tags --always)
+CATALOG_IMG ?= ghcr.io/ubc/hermes-operator-catalog:$(shell git describe --tags --always)
 
 OPERATOR_SDK ?= $(LOCALBIN)/operator-sdk
 OPERATOR_SDK_VERSION ?= v1.38.0
@@ -448,14 +438,14 @@ scorecard: operator-sdk ## Run operator-sdk scorecard tests (requires a kind clu
 
 .PHONY: verify-signing
 verify-signing: ## Verify the latest published release is Cosign-signed and SBOM-attested.
-	@VERSION=$$(gh release view --repo paperclipinc/hermes-operator --json tagName --jq .tagName); \
-	IMAGE="ghcr.io/paperclipinc/hermes-operator:$${VERSION}"; \
+	@VERSION=$$(gh release view --repo ubc/hermes-operator --json tagName --jq .tagName); \
+	IMAGE="ghcr.io/ubc/hermes-operator:$${VERSION}"; \
 	echo "Verifying $${IMAGE}..."; \
 	cosign verify "$${IMAGE}" \
-	  --certificate-identity-regexp 'https://github.com/paperclipinc/hermes-operator/.github/workflows/.*' \
+	  --certificate-identity-regexp 'https://github.com/ubc/hermes-operator/.github/workflows/.*' \
 	  --certificate-oidc-issuer https://token.actions.githubusercontent.com >/dev/null || { echo "::error::signature verification failed for $${IMAGE}"; exit 1; }; \
 	echo "Verifying SBOM attestation..."; \
 	cosign verify-attestation "$${IMAGE}" --type spdxjson \
-	  --certificate-identity-regexp 'https://github.com/paperclipinc/hermes-operator/.github/workflows/.*' \
+	  --certificate-identity-regexp 'https://github.com/ubc/hermes-operator/.github/workflows/.*' \
 	  --certificate-oidc-issuer https://token.actions.githubusercontent.com >/dev/null || { echo "::error::SBOM attestation verification failed for $${IMAGE}"; exit 1; }; \
 	echo "OK: $${IMAGE} is signed and SBOM-attested."

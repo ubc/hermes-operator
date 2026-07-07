@@ -347,7 +347,7 @@ func shareProcessNamespace(inst *hermesv1.HermesInstance) *bool {
 func imageRef(inst *hermesv1.HermesInstance) string {
 	repo := inst.Spec.Image.Repository
 	if repo == "" {
-		repo = "ghcr.io/paperclipinc/hermes-agent"
+		repo = "ghcr.io/ubc/hermes-agent"
 	}
 	if digest := inst.Spec.Image.Digest; digest != "" {
 		return fmt.Sprintf("%s@%s", repo, digest)

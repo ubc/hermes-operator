@@ -1,7 +1,7 @@
 # images/hermes-agent/Dockerfile
 #
-# ghcr.io/paperclipinc/hermes-agent is the operator's published agent image. It
-# IS the upstream NousResearch/hermes-agent image — an s6-overlay runtime that
+# ghcr.io/ubc/hermes-agent is the operator's published agent image. It
+# IS the upstream NousResearch/hermes-agent image, an s6-overlay runtime that
 # bundles the gateway, the dashboard, the OpenAI-compatible API server, a
 # Playwright/Chromium browser, node, and every Python dependency — with operator
 # metadata layered on top.
@@ -14,9 +14,10 @@
 # runs `hermes gateway run` with the API server enabled and probes /health on the
 # gateway port (internal/resources/statefulset.go).
 #
-# Pinned by digest for reproducibility + supply chain. To bump, resolve a new
-# digest for the desired upstream release and update both the digest and
-# HERMES_VERSION:
+# Pinned by digest for reproducibility + supply chain. The daily
+# agent-image-update workflow bumps both HERMES_VERSION and the FROM digest
+# when upstream cuts a new release. To bump by hand, resolve a new digest for
+# the desired upstream release and update both lines:
 #   docker buildx imagetools inspect nousresearch/hermes-agent:<tag>
 #
 # Build arg:
@@ -24,8 +25,8 @@
 #                    the hermes.agent/version label the autoupdate controller reads.
 ARG HERMES_VERSION=v0.16.0
 
-# Multi-arch (linux/amd64 + linux/arm64) manifest-list digest of
-# nousresearch/hermes-agent:latest (v0.16.0). buildx selects the per-platform
+# Multi-arch (linux/amd64 + linux/arm64) manifest-list digest of the upstream
+# release recorded in HERMES_VERSION above. buildx selects the per-platform
 # image from the list at build time.
 FROM nousresearch/hermes-agent@sha256:be6912a818cb4a479fa384024a599fee6796d56d1e6a5ca56834deec328d9981
 
@@ -35,10 +36,10 @@ ARG HERMES_VERSION
 # (Plan 5) compares against the registry tag. The image's upstream ENTRYPOINT
 # (/init → main-wrapper) and env (HERMES_HOME=/opt/data, ...) are inherited.
 LABEL org.opencontainers.image.title="hermes-agent" \
-      org.opencontainers.image.source="https://github.com/paperclipinc/hermes-operator" \
-      org.opencontainers.image.documentation="https://github.com/paperclipinc/hermes-operator/blob/main/images/hermes-agent/README.md" \
+      org.opencontainers.image.source="https://github.com/ubc/hermes-operator" \
+      org.opencontainers.image.documentation="https://github.com/ubc/hermes-operator/blob/main/images/hermes-agent/README.md" \
       org.opencontainers.image.description="Operator-published NousResearch/hermes-agent (s6 runtime: gateway + API server + dashboard + browser) for hermes-operator" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.vendor="paperclipinc" \
+      org.opencontainers.image.vendor="ubc" \
       org.opencontainers.image.base.name="docker.io/nousresearch/hermes-agent" \
       hermes.agent/version="${HERMES_VERSION}"
