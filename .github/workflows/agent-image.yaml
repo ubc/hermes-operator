@@ -115,16 +115,15 @@ jobs:
           syft "ghcr.io/ubc/hermes-agent:${{ steps.ver.outputs.tag }}" \
             -o spdx-json=sbom.spdx.json
 
-      - name: Attach SBOM as Cosign attestation
-        env:
-          DIGEST: ${{ steps.build.outputs.digest }}
-        run: |
-          for attempt in 1 2 3 4 5; do
-            if cosign attest --yes \
-              --predicate sbom.spdx.json \
-              --type spdxjson \
-              "ghcr.io/ubc/hermes-agent@${DIGEST}"; then exit 0; fi
-            echo "cosign attest attempt ${attempt} failed (likely transient rekor); retrying in $((attempt*20))s..." >&2
-            sleep $((attempt*20))
-          done
-          echo "cosign attest failed after retries" >&2; exit 1
+      # No rekor-logged cosign attestation for this SBOM: the upstream runtime
+      # bundles Chromium, node, and a full Python env, so the SPDX document is
+      # multiple megabytes, far past the public Rekor instance's entry size
+      # cap. Every attest upload fails at rekor.sigstore.dev regardless of
+      # retries. The canonical in-registry SBOM is the one build-push-action
+      # attaches via `sbom: true`; this artifact is a human-downloadable copy.
+      - name: Upload SBOM as run artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-hermes-agent-${{ steps.ver.outputs.tag }}-spdx
+          path: sbom.spdx.json
+          if-no-files-found: error
