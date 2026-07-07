@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.19](https://github.com/ubc/hermes-operator/compare/v0.1.18...v0.1.19) (2026-07-07)
+
+
+### Features
+
+* **chart:** world-class Artifact Hub metadata + cosign chart signing ([#78](https://github.com/ubc/hermes-operator/issues/78)) ([4e38216](https://github.com/ubc/hermes-operator/commit/4e382164d94142eb205b9ace554e36c66438f7a8))
+* hermes-operator v1.0.0 — plans 1–7 implementation ([#1](https://github.com/ubc/hermes-operator/issues/1)) ([a99ad5c](https://github.com/ubc/hermes-operator/commit/a99ad5c9e2d684c6a7fbd0a5884e23a982d449f0))
+* optional Gateway API HTTPRoute for HermesInstance ([#59](https://github.com/ubc/hermes-operator/issues/59)) ([ff5d781](https://github.com/ubc/hermes-operator/commit/ff5d7817a991a64c6e124190787d103dea9f40e0))
+* publish images under ubc and auto-build on upstream releases ([#1](https://github.com/ubc/hermes-operator/issues/1)) ([8b203b4](https://github.com/ubc/hermes-operator/commit/8b203b4739f1269bd792231dc89700f932381dc6))
+* **runtime:** run agents on the upstream s6 image — instance reaches Ready (gateway API + /health) ([#90](https://github.com/ubc/hermes-operator/issues/90)) ([12dccb4](https://github.com/ubc/hermes-operator/commit/12dccb40a00f66a34b80267932cda2e3c3898220))
+* spec.tailscale.mode=serve (private tailnet exposure) ([#63](https://github.com/ubc/hermes-operator/issues/63)) ([da7c307](https://github.com/ubc/hermes-operator/commit/da7c307ecf1c738c145cc096cb064a2fdb1e6d45))
+* tier-1/2 parity (digest-pin, bench, image CEL, zombie reaping, Grafana, docs-site) ([#56](https://github.com/ubc/hermes-operator/issues/56)) ([712ed2b](https://github.com/ubc/hermes-operator/commit/712ed2b1928d363abade3fd3caf5158db798d5fc))
+
+
+### Bug Fixes
+
+* **agent-image:** broken runtime venv + invalid smoke workflow YAML ([#66](https://github.com/ubc/hermes-operator/issues/66)) ([ec6016c](https://github.com/ubc/hermes-operator/commit/ec6016c141813a84f673d9c7cc77b824abbc180a))
+* **agent-image:** native pinned uv relock + bump uv to 0.11.7 ([#48](https://github.com/ubc/hermes-operator/issues/48)) ([6e2615f](https://github.com/ubc/hermes-operator/commit/6e2615f29de4e8e92d6fc0b9fdb0b0a2eac0978f))
+* **agent-image:** relock uses uv image entrypoint (unblocks hermes-agent publish) ([#46](https://github.com/ubc/hermes-operator/issues/46)) ([9e456b1](https://github.com/ubc/hermes-operator/commit/9e456b199741b0e279fa24587a1317be15f82f81))
+* **agent-image:** ship pyproject.toml + uv.lock at /opt/venv-template/ ([#68](https://github.com/ubc/hermes-operator/issues/68)) ([#85](https://github.com/ubc/hermes-operator/issues/85)) ([39ef52c](https://github.com/ubc/hermes-operator/commit/39ef52c09efa10becf02a2238f8637be1c6bfc0a))
+* **agent-image:** ship SBOM as run artifact, drop rekor attestation ([#2](https://github.com/ubc/hermes-operator/issues/2)) ([8de8f13](https://github.com/ubc/hermes-operator/commit/8de8f13c6f519845b36cc53ca1865611df774970))
+* **agent-image:** ship the uv binary in the runtime stage ([#68](https://github.com/ubc/hermes-operator/issues/68)) ([#88](https://github.com/ubc/hermes-operator/issues/88)) ([13fb1e5](https://github.com/ubc/hermes-operator/commit/13fb1e512cfea258359aa9744750e51299baf25e))
+* **agent-image:** verify uv.lock by git tag (unblocks publish) ([#50](https://github.com/ubc/hermes-operator/issues/50)) ([3cbcc7f](https://github.com/ubc/hermes-operator/commit/3cbcc7f3fc17216d7fd24aceeeb5124966ab485c))
+* **backup:** bound the on-delete finalizer so a failing snapshot can't make an instance undeletable ([#94](https://github.com/ubc/hermes-operator/issues/94)) ([40d6099](https://github.com/ubc/hermes-operator/commit/40d609947b0659dfb747e8cc57686584ae9d94cb))
+* **bundle:** declare com.redhat.openshift.versions for OpenShift cert ([#80](https://github.com/ubc/hermes-operator/issues/80)) ([47d5ff4](https://github.com/ubc/hermes-operator/commit/47d5ff4a5c1b547290acfe24e0628b357415062c))
+* **ci:** drop --remote from gh repo fork in operatorhub-submit ([#29](https://github.com/ubc/hermes-operator/issues/29)) ([55bab59](https://github.com/ubc/hermes-operator/commit/55bab593d92088ce31ff46925ca4a5b6a37a80b3))
+* **ci:** operatorhub-submit uses classic PAT with public_repo scope ([#39](https://github.com/ubc/hermes-operator/issues/39)) ([33273ad](https://github.com/ubc/hermes-operator/commit/33273adf3bd6e0149ef174c12a434a5f06dcbde6))
+* **ci:** release-please auto-creates tag via commit-message detection ([#38](https://github.com/ubc/hermes-operator/issues/38)) ([e36a8d4](https://github.com/ubc/hermes-operator/commit/e36a8d471732109c0308a4b7642e8112b8b6ac58))
+* **ci:** semantic Bundle RBAC sync check (was: file-diff flake) ([#16](https://github.com/ubc/hermes-operator/issues/16)) ([3b3b5a6](https://github.com/ubc/hermes-operator/commit/3b3b5a6e83046ccf041340e082e0165234d3ceb3))
+* **olm:** correct CSV image refs so OperatorHub submission passes ([#54](https://github.com/ubc/hermes-operator/issues/54)) ([edaa87d](https://github.com/ubc/hermes-operator/commit/edaa87ddf333a7610e3d451666f02c4bd8362880))
+* **olm:** declare webhookDefinitions so OLM provisions the webhook cert ([#57](https://github.com/ubc/hermes-operator/issues/57)) ([4420511](https://github.com/ubc/hermes-operator/commit/44205118a0fd3cd3d08c847449684f472ebb14b3))
+* **olm:** use the official Hermes logo for the bundle icon ([#60](https://github.com/ubc/hermes-operator/issues/60)) ([45c2f38](https://github.com/ubc/hermes-operator/commit/45c2f38e1e89fafe8443fbed9b98d6c2da288b15))
+* **operatorhub:** ship ci.yaml to redhat submission + add reviewers ([#82](https://github.com/ubc/hermes-operator/issues/82)) ([9e9cafe](https://github.com/ubc/hermes-operator/commit/9e9cafe13428bb8c3d41cc3e895f334d11a2d3e2))
+* **release:** build container images via docker/build-push-action ([#23](https://github.com/ubc/hermes-operator/issues/23)) ([d1b4862](https://github.com/ubc/hermes-operator/commit/d1b4862f018d4b6c1d657d8485ce4f417f754030))
+* **release:** run make installer via goreleaser before:hooks ([#25](https://github.com/ubc/hermes-operator/issues/25)) ([5bcd154](https://github.com/ubc/hermes-operator/commit/5bcd1548d9b80b23809b171b13d7ec71a80724af))
+* **release:** trigger v0.1.2 (v0.1.1 tag has broken release.yaml) ([#18](https://github.com/ubc/hermes-operator/issues/18)) ([e3f8289](https://github.com/ubc/hermes-operator/commit/e3f8289b26d2dcc581702c138549c90914b747bf))
+* **release:** use --skip=validate instead of throw-away commit ([#20](https://github.com/ubc/hermes-operator/issues/20)) ([61f2099](https://github.com/ubc/hermes-operator/commit/61f20999031ba61f13d2996b7b235026ab701e5a))
+* **release:** write install.yaml outside dist for goreleaser dist check ([#28](https://github.com/ubc/hermes-operator/issues/28)) ([b1f3f0a](https://github.com/ubc/hermes-operator/commit/b1f3f0acc3f253a044636f4b5227b344e82beb63))
+* rename stubbi → paperclipinc across chart, CI, docs, Go module ([de3e0bd](https://github.com/ubc/hermes-operator/commit/de3e0bd1f3e0ae8b1ee01b8748f005053f1f3b65))
+
 ## [0.1.18](https://github.com/paperclipinc/hermes-operator/compare/v0.1.17...v0.1.18) (2026-06-19)
 
 

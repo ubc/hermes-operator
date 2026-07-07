@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/ubc/hermes-operator
-  tag: 0.1.18
+  tag: 0.1.19
   pullPolicy: IfNotPresent
 logLevel: info
 createRBAC: true
