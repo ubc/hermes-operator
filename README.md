@@ -277,7 +277,7 @@ minor release. Patch releases never change the supported matrix.
 | Channel | What |
 |---|---|
 | Helm (OCI) | `helm install hermes-operator oci://ghcr.io/ubc/charts/hermes-operator` |
-| OLM / OperatorHub | `kubectl operator install hermes-operator` (pending first OperatorHub release) |
+| OLM bundle | built and validated in CI; deliberately not published to OperatorHub |
 | Plain manifests | `kubectl apply -f https://github.com/ubc/hermes-operator/releases/latest/download/install.yaml` |
 | Container image | `ghcr.io/ubc/hermes-operator:v0.1.9` (multi-arch, Cosign-signed, SBOM attested) |
 
