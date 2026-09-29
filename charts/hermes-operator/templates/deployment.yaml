@@ -25,6 +25,7 @@ spec:
           args:
             - --metrics-secure={{ .Values.metrics.secure }}
             - --zap-log-level={{ .Values.logLevel }}
+            - --health-probe-bind-address=:{{ .Values.probes.port }}
             {{- with .Values.watchNamespaces }}
             {{- /*
               TODO(v1.1): wire spec.watchNamespaces into manager cache.Options.DefaultNamespaces.
@@ -41,11 +42,34 @@ spec:
             - name: metrics
               containerPort: 8443
               protocol: TCP
+            - name: health
+              containerPort: {{ .Values.probes.port }}
+              protocol: TCP
             {{- if .Values.webhook.enabled }}
             - name: webhook
               containerPort: {{ .Values.webhook.port }}
               protocol: TCP
             {{- end }}
+          {{- with .Values.probes.liveness }}
+          {{- if .enabled }}
+          livenessProbe:
+            httpGet: { path: /healthz, port: health }
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            periodSeconds: {{ .periodSeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            failureThreshold: {{ .failureThreshold }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.probes.readiness }}
+          {{- if .enabled }}
+          readinessProbe:
+            httpGet: { path: /readyz, port: health }
+            initialDelaySeconds: {{ .initialDelaySeconds }}
+            periodSeconds: {{ .periodSeconds }}
+            timeoutSeconds: {{ .timeoutSeconds }}
+            failureThreshold: {{ .failureThreshold }}
+          {{- end }}
+          {{- end }}
           {{- if .Values.webhook.enabled }}
           volumeMounts:
             - name: webhook-cert
