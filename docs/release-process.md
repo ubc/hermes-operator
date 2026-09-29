@@ -26,9 +26,16 @@ already-published releases).
    - `CHANGELOG.md` update
    - `.release-please-manifest.json` bump
    - `charts/hermes-operator/Chart.yaml` version + appVersion bump
-   - `charts/hermes-operator/values.yaml` image.tag bump
-   - `bundle/manifests/hermes-operator.clusterserviceversion.yaml` version +
-     metadata.name + containerImage bump
+   - `bundle/manifests/hermes-operator.clusterserviceversion.yaml`:
+     `spec.version`, `metadata.name`, `containerImage`, the `relatedImages`
+     operator entry and the manager deployment image. All five carry an inline
+     `# x-release-please-version` marker and are rewritten by the *generic*
+     updater, which swaps the semver in place and so preserves the leading `v`.
+     Do not point a yaml/jsonpath updater at this file: it writes a bare
+     version (breaking the image pull and `operatorhub-submit.yaml`'s sed, see
+     #113) and it round-trips the document, dropping the markers so nothing
+     else gets bumped at all (see #129).
+     `hack/check-chart-image-tags.sh` guards both.
 3. **Review and merge the PR.** Squash-and-merge is fine; the commit subject
    must remain `chore(main): release vX.Y.Z` for the tag creator step to
    recognise it.

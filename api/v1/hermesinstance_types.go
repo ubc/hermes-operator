@@ -333,6 +333,19 @@ type ResourcesSpec struct {
 	// Limits is the resource-limits map.
 	// +optional
 	Limits corev1.ResourceList `json:"limits,omitempty"`
+
+	// ApplyOperatorDefaults controls the operator's built-in fallback for the
+	// agent container. When requests or limits are left unset, the operator
+	// fills that side in so an agent executing model-driven code cannot run
+	// unbounded and starve its node. Unset means true.
+	//
+	// Set false to keep a side genuinely unbounded, for example a long-lived
+	// instance whose working set is known to exceed the default limits and
+	// which would otherwise be OOM-killed after an operator upgrade.
+	// Whichever side you set explicitly is used verbatim either way; this flag
+	// only governs the side you leave unset.
+	// +optional
+	ApplyOperatorDefaults *bool `json:"applyOperatorDefaults,omitempty"`
 }
 
 // ToContainerResourceRequirements converts to a corev1.ResourceRequirements,
@@ -847,6 +860,17 @@ type SchedulingSpec struct {
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// +optional
 	PriorityClassName string `json:"priorityClassName,omitempty"`
+
+	// RuntimeClassName selects the RuntimeClass the instance pod runs under,
+	// so an agent executing model-driven code can be placed on a sandboxed
+	// runtime (gVisor "runsc", Kata) instead of the cluster default.
+	//
+	// The named RuntimeClass must already exist in the cluster; an unknown name
+	// leaves the pod unschedulable. Empty means the cluster default runtime.
+	// +kubebuilder:validation:MaxLength=253
+	// +kubebuilder:validation:Pattern=`^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	// +optional
+	RuntimeClassName string `json:"runtimeClassName,omitempty"`
 }
 
 // InstanceSkill: Plan 3 fills the runtime semantics. The field exists here so

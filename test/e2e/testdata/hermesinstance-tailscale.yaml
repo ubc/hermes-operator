@@ -15,7 +15,7 @@ metadata:
 spec:
   image:
     repository: ghcr.io/ubc/hermes-agent
-    tag: "v0.13.0"
+    tag: "v0.16.0"
     pullPolicy: IfNotPresent
   storage:
     persistence:
