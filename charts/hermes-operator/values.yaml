@@ -10,6 +10,25 @@ createRBAC: true
 watchNamespaces: []
 metrics:
   secure: true
+# Manager health probes. controller-runtime serves /healthz and /readyz on this port
+# (--health-probe-bind-address, passed explicitly so the flag and the probes cannot drift).
+# /readyz also waits for the webhook server, so the pod only joins the webhook Service once
+# admission (failurePolicy: Fail) can actually be served. Timings mirror the kubebuilder
+# scaffold in config/manager/manager.yaml.
+probes:
+  port: 8081
+  liveness:
+    enabled: true
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 1
+    failureThreshold: 3
+  readiness:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 1
+    failureThreshold: 3
 resources:
   requests:
     cpu: 100m

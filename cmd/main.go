@@ -253,6 +253,13 @@ func main() {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
+	// The webhooks are registered unconditionally above and served with failurePolicy: Fail, so
+	// the pod must not join the webhook Service's endpoints until the webhook server is actually
+	// listening; otherwise every HermesInstance create/update is rejected during that window.
+	if err := mgr.AddReadyzCheck("webhook", mgr.GetWebhookServer().StartedChecker()); err != nil {
+		setupLog.Error(err, "unable to set up webhook ready check")
+		os.Exit(1)
+	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
