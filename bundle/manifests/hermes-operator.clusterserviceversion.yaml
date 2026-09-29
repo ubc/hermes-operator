@@ -1,12 +1,12 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: hermes-operator.v0.1.10
+  name: hermes-operator.v0.2.0 # x-release-please-version
   namespace: placeholder
   annotations:
     capabilities: Auto Pilot
     categories: AI/Machine Learning, Developer Tools, Application Runtime
-    containerImage: ghcr.io/ubc/hermes-operator:v0.1.10
+    containerImage: ghcr.io/ubc/hermes-operator:v0.2.0 # x-release-please-version
     createdAt: '2026-05-12T00:00:00Z'
     support: ubc
     repository: https://github.com/ubc/hermes-operator
@@ -206,7 +206,7 @@ spec:
 
     - Kubernetes 1.28+
   maturity: alpha
-  version: 0.1.19
+  version: 0.2.0 # x-release-please-version
   minKubeVersion: 1.28.0
   keywords:
     - ai
@@ -235,7 +235,8 @@ spec:
     - name: GitHub Repository
       url: https://github.com/ubc/hermes-operator
     - name: API Reference
-      url: https://github.com/ubc/hermes-operator/blob/main/docs/api-reference.md
+      url: >-
+        https://github.com/ubc/hermes-operator/blob/main/docs/api-reference.md
     - name: Changelog
       url: https://github.com/ubc/hermes-operator/blob/main/CHANGELOG.md
   installModes:
@@ -249,7 +250,7 @@ spec:
       supported: true
   relatedImages:
     - name: hermes-operator
-      image: ghcr.io/ubc/hermes-operator:v0.1.0
+      image: ghcr.io/ubc/hermes-operator:v0.2.0 # x-release-please-version
     - name: hermes-agent
       image: ghcr.io/ubc/hermes-agent:v2026.5.29.2
   customresourcedefinitions:
@@ -646,7 +647,7 @@ spec:
                 terminationGracePeriodSeconds: 10
                 containers:
                   - name: manager
-                    image: ghcr.io/ubc/hermes-operator:v0.1.0
+                    image: ghcr.io/ubc/hermes-operator:v0.2.0 # x-release-please-version
                     command:
                       - /manager
                     args:

@@ -1089,6 +1089,9 @@ _Appears in:_
 - [HermesClusterDefaultsSpec](#hermesclusterdefaultsspec)
 - [HermesInstanceSpec](#hermesinstancespec)
 
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `applyOperatorDefaults` _boolean_ | ApplyOperatorDefaults controls the operator's built-in fallback for the<br />agent container. When requests or limits are left unset, the operator<br />fills that side in so an agent executing model-driven code cannot run<br />unbounded and starve its node. Unset means true.<br />Set false to keep a side genuinely unbounded, for example a long-lived<br />instance whose working set is known to exceed the default limits and<br />which would otherwise be OOM-killed after an operator upgrade.<br />Whichever side you set explicitly is used verbatim either way; this flag<br />only governs the side you leave unset. |  | Optional: \{\} <br /> |
 
 
 #### RipgrepSpec
@@ -1150,6 +1153,7 @@ _Appears in:_
 | `tolerations` _[Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#toleration-v1-core) array_ |  |  | Optional: \{\} <br /> |
 | `affinity` _[Affinity](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.31/#affinity-v1-core)_ |  |  | Optional: \{\} <br /> |
 | `priorityClassName` _string_ |  |  | Optional: \{\} <br /> |
+| `runtimeClassName` _string_ | RuntimeClassName selects the RuntimeClass the instance pod runs under,<br />so an agent executing model-driven code can be placed on a sandboxed<br />runtime (gVisor "runsc", Kata) instead of the cluster default.<br />The named RuntimeClass must already exist in the cluster; an unknown name<br />leaves the pod unschedulable. Empty means the cluster default runtime. |  | MaxLength: 253 <br />Pattern: `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$` <br />Optional: \{\} <br /> |
 
 
 #### SecurityDefaults
