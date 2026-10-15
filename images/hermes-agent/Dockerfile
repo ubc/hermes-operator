@@ -23,12 +23,12 @@
 # Build arg:
 #   HERMES_VERSION : the upstream release this digest corresponds to. Surfaced as
 #                    the hermes.agent/version label the autoupdate controller reads.
-ARG HERMES_VERSION=v0.22.0
+ARG HERMES_VERSION=v0.22.2
 
 # Multi-arch (linux/amd64 + linux/arm64) manifest-list digest of the upstream
 # release recorded in HERMES_VERSION above. buildx selects the per-platform
 # image from the list at build time.
-FROM nousresearch/hermes-agent@sha256:c69536a39e885b8943329bda68cdf44492458b96aa74a212239bde9d2aeb406a
+FROM nousresearch/hermes-agent@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
 
 ARG HERMES_VERSION
 
