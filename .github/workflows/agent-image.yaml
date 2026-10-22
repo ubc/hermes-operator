@@ -60,6 +60,12 @@ jobs:
           bare="${v#v}"
           echo "tag=${v}" >> "$GITHUB_OUTPUT"
           echo "bare=${bare}" >> "$GITHUB_OUTPUT"
+          # A suffixed tag (e.g. v2026.9.24-ca1, a patched rebuild of an older
+          # release) must not move :latest back to the older runtime.
+          case "$v" in
+            *-*) echo "latest=false" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "latest=true" >> "$GITHUB_OUTPUT" ;;
+          esac
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -84,7 +90,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/ubc/hermes-agent:${{ steps.ver.outputs.tag }}
-            ghcr.io/ubc/hermes-agent:latest
+            ${{ steps.ver.outputs.latest == 'true' && 'ghcr.io/ubc/hermes-agent:latest' || '' }}
           build-args: |
             HERMES_VERSION=${{ steps.ver.outputs.tag }}
           provenance: true

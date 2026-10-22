@@ -32,6 +32,22 @@ FROM nousresearch/hermes-agent@sha256:36099926da316742423544e055d4734777105ffe63
 
 ARG HERMES_VERSION
 
+# CA trust fix for CVE-2026-111943 (eMudhra intermediate CA keys compromised).
+# Upstream images ship Debian ca-certificates 20250419 and certifi 2026.05.20,
+# which still trust emSign ECC Root CA - G3 and AAA Certificate Services, so the
+# agent's Slack, LLM, GitHub and Google calls accept forged certificates. The
+# Debian update (deb13u1) and certifi 2026.10.19 drop them. `>=` keeps a newer
+# upstream certifi; the final checks fail the build if either fix is missing.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && uv pip install --python /opt/hermes/.venv/bin/python --no-cache 'certifi>=2026.10.19' \
+ && test ! -e /usr/share/ca-certificates/mozilla/emSign_ECC_Root_CA_-_G3.crt \
+ && /opt/hermes/.venv/bin/python -c 'import certifi, sys; sys.exit(certifi.__version__ < "2026.10.19")'
+
+# grpc ignores certifi and reads its own bundled roots.pem; use the system store.
+ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
+
 # Operator metadata. hermes.agent/version is what the autoupdate controller
 # (Plan 5) compares against the registry tag. The image's upstream ENTRYPOINT
 # (/init → main-wrapper) and env (HERMES_HOME=/opt/data, ...) are inherited.
