@@ -40,11 +40,14 @@ ARG HERMES_VERSION
 # upstream certifi; the final checks fail the build if either fix is missing.
 # uv is on PATH (/usr/local/bin) up to v2026.9.x; from v0.22 upstream ships it
 # only under /opt/hermes/tools/uv-<version>-<arch>/, so look in both places.
+# WORKDIR /opt/hermes picks up upstream's [tool.uv] exclude-newer = "3 days",
+# which would hide a fresh certifi; exempt certifi alone from that cutoff.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
  && UV="$(command -v uv || ls /opt/hermes/tools/uv-*/uv)" \
- && "$UV" pip install --python /opt/hermes/.venv/bin/python --no-cache 'certifi>=2026.10.19' \
+ && "$UV" pip install --python /opt/hermes/.venv/bin/python --no-cache \
+      --exclude-newer-package "certifi=$(date -u +%Y-%m-%dT%H:%M:%SZ)" 'certifi>=2026.10.19' \
  && test ! -e /usr/share/ca-certificates/mozilla/emSign_ECC_Root_CA_-_G3.crt \
  && /opt/hermes/.venv/bin/python -c 'import certifi, sys; sys.exit(certifi.__version__ < "2026.10.19")'
 
