@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.1](https://github.com/ubc/hermes-operator/compare/v0.2.0...v0.2.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **agent-image:** exempt certifi from upstream's 3-day uv cutoff ([dac9435](https://github.com/ubc/hermes-operator/commit/dac94357f0dd0ec5e03c7cab3efe5a9eca6e7b5e))
+* **agent-image:** find uv under /opt/hermes/tools on v0.22+ bases ([140d0a0](https://github.com/ubc/hermes-operator/commit/140d0a0aa2c885c29cb78cbff3396f45350b8122))
+* **agent-image:** find uv under /opt/hermes/tools on v0.22+ bases ([6215230](https://github.com/ubc/hermes-operator/commit/621523017d062663b3c113a96d026cfc8df16e29))
+* **agent-image:** upgrade CA trust stores in the published image (CVE-2026-111943) ([b9beb4c](https://github.com/ubc/hermes-operator/commit/b9beb4cad366c880d1349813329d0227adb0a887))
+* **agent-image:** upgrade CA trust stores in the published image (CVE-2026-111943) ([99e8213](https://github.com/ubc/hermes-operator/commit/99e8213fbf9bfaff81703a15413aa5ec899c887e))
+
 ## [0.2.0](https://github.com/ubc/hermes-operator/compare/v0.1.20...v0.2.0) (2026-09-06)
 
 
