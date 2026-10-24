@@ -23,7 +23,7 @@
 # Build arg:
 #   HERMES_VERSION : the upstream release this digest corresponds to. Surfaced as
 #                    the hermes.agent/version label the autoupdate controller reads.
-ARG HERMES_VERSION=v2026.9.24-ca1
+ARG HERMES_VERSION=v2026.9.24-ca2
 
 # Multi-arch (linux/amd64 + linux/arm64) manifest-list digest of the upstream
 # release recorded in HERMES_VERSION above. buildx selects the per-platform
@@ -44,6 +44,17 @@ RUN apt-get update \
  && uv pip install --python /opt/hermes/.venv/bin/python --no-cache 'certifi>=2026.10.19' \
  && test ! -e /usr/share/ca-certificates/mozilla/emSign_ECC_Root_CA_-_G3.crt \
  && /opt/hermes/.venv/bin/python -c 'import certifi, sys; sys.exit(certifi.__version__ < "2026.10.19")'
+
+# BC stays on UTC-7 from 2026-11-01 (no fall back). Upstream ships Debian tzdata 2026a
+# and pytz 2025.2, which both still have America/Vancouver falling back to UTC-8, so the
+# agent's "now", its America/Vancouver cron jobs and the on-call calendar sync would be
+# an hour off. trixie-updates' tzdata (2026b+) and pytz 2026.2+ have the change; the
+# check fails the build if zoneinfo or pytz still gives UTC-8 in December 2026.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends --only-upgrade tzdata \
+ && rm -rf /var/lib/apt/lists/* \
+ && uv pip install --python /opt/hermes/.venv/bin/python --no-cache 'pytz>=2026.2' \
+ && /opt/hermes/.venv/bin/python -c 'import datetime as d, sys, pytz; from zoneinfo import ZoneInfo; t = d.datetime(2026, 12, 1, 12); z = t.replace(tzinfo=ZoneInfo("America/Vancouver")).utcoffset(); p = pytz.timezone("America/Vancouver").localize(t).utcoffset(); sys.exit(0 if z == p == d.timedelta(hours=-7) else 1)'
 
 # grpc ignores certifi and reads its own bundled roots.pem; use the system store.
 ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
